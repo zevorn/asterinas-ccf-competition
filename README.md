@@ -38,7 +38,7 @@ GDB 可以连接 QEMU gdbstub，但 Rust 内核的默认调试体验仍有明显
 3. 找一个进程或线程需要从 PID 表开始，经过锁、<code>BTreeMap</code>、<code>Arc</code>、<code>Weak</code> 和 <code>Option</code> 等多层结构；
 4. 这些动作单独都不难，但组合起来会持续打断调试者的注意力和假设验证节奏。
 
-因此，GDB helpers 的目标不是替代 GDB，而是把最耗注意力、最重复的动作变成稳定的调试基础设施。
+因此，GDB helpers 把最耗注意力、最重复的动作沉淀成稳定的调试基础设施。
 
 ## 2. 方案目标
 
@@ -168,37 +168,56 @@ p (*$ast_thread(1)).is_exited
 | 自动化证据 | [gdb-smoke-test 成功记录](https://github.com/asterinas/asterinas/actions/runs/28657288013/job/84989356187) |
 | 5 分钟视频 | 按以下讲稿与录制步骤补充 |
 
-## 7. 五分钟讲稿
+## 7. 5 分钟讲稿（4 分钟 PPT + 1 分钟演示）
 
-> 建议正常语速讲解，并在“现场演示”段同步录屏。命令执行和切换终端的时间已包含在时长内。
+> 第 1–6 页只讲 4 分钟；第 7 页切到录屏，用 1 分钟完成命令演示。下面的时间是剪辑与讲解的总时长，不录 QEMU 启动等待。
 
-### 0:00–0:35｜方案介绍
+### 第 1 页｜0:00–0:30｜开场
 
-各位评委好，我们是搭把手战队。本次作品是 Asterinas 的 GDB helpers 内核调试方案。Asterinas 是一个使用 Rust 编写、追求 Linux 兼容性的内核。它可以通过 QEMU 的 GDB server 进行底层调试，但开发者过去仍要手工理解 Rust 的 Arc、锁、集合和内核对象布局。我们的目标不是替代 GDB，而是在不改变内核运行时行为的前提下，让开发者能更直接、更可靠地理解正在运行的 Asterinas。
+大家好，我是搭把手战队队长泽文，队员是邵志航。我们参加第八届 CCF 开源创新大赛“星绽开源社区贡献”赛题。参赛作品是 Asterinas GDB helpers：一条可自动加载、可脚本化的内核调试流程，也能接入 Agent 和 Workflow 做固定检查。
 
-### 0:35–1:20｜真实问题与需求来源
+### 第 2 页｜0:30–1:15｜问题从一次段错误开始
 
-这套工具不是从抽象需求开始，而来自一次真实排障。我们在进程加载阶段检查 ELF 的 PT_INTERP 和动态链接器，发现构建时链接到的 Rust 动态库版本与 OS rootfs 中实际加载的版本不一致。符号名看上去能匹配，真实地址背后的函数已经偏移，最后触发 trap，用户进程收到 Segmentation Fault。进一步追踪时，需要穿过动态链接、进程加载、trap handler、内核对象和 Rust 类型系统。真正耗时间的不是某一条命令，而是不断重复的对象导航、类型解包和日志整理。
+方案来自一次进程加载段错误。Asterinas 处理 ELF 的 `PT_INTERP` 时，需要映射动态链接器。我们发现构建时的 Rust 动态库和 rootfs 中实际加载的版本不一致：符号名还能对上，函数地址已经偏移，最终触发了 trap。
 
-### 1:20–2:15｜实现策略
+随后排查要跨动态链接、进程加载、trap handler 和 Rust 结构，反复解符号、穿锁和集合、从 PID 表找对象。于是我们把这次排查沉淀成了 GDB helper。
 
-因此，我们将能力按投入回报分成三层。第一层先处理 Rust wrapper 的显示：Atomic、Mutex、RwMutex 和 SpinLock 直接显示为开发者能读懂的值，降低 UnsafeCell 等内部细节带来的噪声。第二层解决对象导航，提供 ast_process、ast_thread、ast_pid_table 和 ast_file_table 等 convenience function，把 GDB 直接带到目标对象。第三层只保留真正需要聚合的 ast 命令，例如进程表、线程表、进程树、文件描述符和运行时间。这样，导航交给 helper，展示仍交给 GDB，pretty-printer 专注降低噪声。
+### 第 3 页｜1:15–1:55｜先做三层最常用的能力
 
-### 2:15–3:10｜架构与可维护性
+和上游讨论后，我们先做三层：`wrapper_type` 和 pretty-printer 压低 Rust wrapper 噪声；convenience function 从 PID 表导航到进程、线程和文件表；`ast-*` 命令聚合进程、线程、FD、进程树和运行时间。
 
-在架构上，cargo osdk debug 会自动使用 rust-gdb，并加载 asterinas-gdb.py。入口脚本注册 Rust 标准库和 Asterinas 自定义的 printer、function 与 command。底层的 gdb_bridge 封装 GDB Python API；layout 统一读取 Arc、锁和集合；kernel 知道如何从 PID 表走到进程、线程和文件表；commands 只做参数解析与表格输出。符号名、类型名和其他布局敏感常量集中在 constants 中，与 Rust 结构耦合的位置明确标记，这样后续内核演进时，helper 的维护边界是清楚的。
+先把重复动作固定下来，开发者仍能用原生 GDB 看任何字段。
 
-### 3:10–4:05｜验证策略
+### 第 4 页｜1:55–2:50｜实现与自动加载
 
-调试脚本最怕的不是崩溃，而是内核布局变化后继续运行却给出错误结果。因此，我们新增了真实 QEMU 加真实 GDB 的 smoke test。测试启动 Asterinas，等待 GDB socket，在内核入口和首次 syscall handler 设置断点，确保 PID 1 已建立。之后自动检查 pretty-printer、关键全局符号、对象定位函数和 ast 命令。只有输出 SMOKE: all ok 才通过。当前 PR 的独立 gdb-smoke-test GitHub Actions 已成功完成，说明这条完整链路可以在自动化环境重复验证。
+执行 `cargo osdk debug` 后，OSDK 会使用 `rust-gdb` 并加载 `asterinas-gdb.py`，用户不用自己找脚本或维护 `.gdbinit`。
 
-### 4:05–4:45｜现场演示
+底层 `gdb_bridge.py` 收口 GDB Python API；`layout.py` 和 `printers.py` 处理 Rust 类型；`kernel.py` 与 `commands.py` 管理内核对象和命令，`constants.py` 集中布局敏感常量。Agent 和 Workflow 复用这个入口，自动跑固定检查。
 
-现在演示实际使用。左侧终端已经执行 cargo osdk run 并打开 GDB server。右侧运行 cargo osdk debug 后，可以看到 helpers 自动加载。首先运行 ast-version 确认目标；接着运行 ast-ps，直接得到 PID、父 PID、状态、线程数和进程名。运行 ast-threads 和 ast-pstree 可以看线程及进程层级。对 PID 1 运行 ast-fds 1，可以看到文件描述符、flags 和类型。最后运行 ast-uptime，并用 ast_thread 打印线程字段，可以看到 wrapper 已被 pretty-printer 简化显示。
+### 第 5 页｜2:50–3:30｜让脚本能长期维护
 
-### 4:45–5:00｜总结
+Python helper 会读到和 Rust 结构强耦合的数据。我们在耦合点加 `COUPLED` 标记，并用真实 QEMU + GDB smoke test 检查 printer、对象导航和 `ast-*`。
 
-这套 helpers 把“会用 GDB”推进到“能看懂 Asterinas 的运行状态”。它保持零侵入，能自动加载，且有真实内核与 GDB 的 CI 验证。当前实现以 #3412 PR 和 #3094 RFC 公开，后续将继续扩展到调度、内存、锁竞争和网络诊断。谢谢各位评委。
+只有输出 `SMOKE: all ok` 才通过；PR #3412 的 CI 已成功跑通。
+
+### 第 6 页｜3:30–4:00｜阶段成果
+
+这套 helpers 不改原生调试行为，却把 Rust 类型、内核对象和高频状态放到更短的路径上。底层对象仍可用原生 GDB 继续展开。
+
+下面用一分钟看真实内核上的命令输出。
+
+### 第 7 页｜4:00–5:00｜作品演示
+
+录屏从已经启动的 QEMU 和已打开的 GDB 开始，保留命令与关键输出，避免录入启动等待。
+
+| 时间 | 操作 | 旁白 |
+| --- | --- | --- |
+| 4:00–4:08 | 执行 `cargo osdk debug` | 这里可以看到 helpers 随 debug 命令自动加载，不需要额外配置。 |
+| 4:08–4:16 | 执行 `ast-version` | 先确认当前内核与 helper 已经连接成功。 |
+| 4:16–4:29 | 执行 `ast-ps`、`ast-pstree` | 进程表和父子关系不再需要从 PID 表手工遍历。 |
+| 4:29–4:40 | 执行 `ast-threads` | 这里直接查看线程与所属进程。 |
+| 4:40–4:52 | 执行 `ast-fds 1` | PID 1 的文件描述符、flags 和文件类型会被格式化输出。 |
+| 4:52–5:00 | 执行 `ast-uptime` | 最后读取内核运行时间。到这里，常见的内核状态已经能通过一组稳定命令快速拿到。 |
 
 ## 8. 团队既有 Asterinas 贡献台账
 
