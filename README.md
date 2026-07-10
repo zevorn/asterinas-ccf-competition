@@ -10,7 +10,7 @@
 | 参赛项目 | [Asterinas（星绽）](https://github.com/asterinas/asterinas) —— Rust 编写的 Linux 兼容内核 |
 | 主作品 | [#3412 Add GDB helpers for kernel debugging](https://github.com/asterinas/asterinas/pull/3412) |
 | 设计讨论 | [#3094 Add GDB helper scripts for non-invasive kernel debugging](https://github.com/asterinas/asterinas/issues/3094) |
-| 演示 PPT | [asterinas-gdb-helpers-ccf.pptx](outputs/asterinas-gdb-helpers-ccf.pptx) |
+| 演示 PPT | [asterinas-gdb-helpers-ccf-demo.pptx](outputs/asterinas-gdb-helpers-ccf-demo.pptx)（含视频演示流程页） |
 | 资料核验日期 | 2026-07-10 |
 
 > 状态说明：#3412 当前为上游开放 PR，尚未合并。本作品展示已实现、已测试的方案，不将其表述为“已合入 Asterinas 主线”。
@@ -163,7 +163,7 @@ p (*$ast_thread(1)).is_exited
 | 交付物 | 内容 |
 | --- | --- |
 | 方案文档 | 本 README |
-| 精简演示 PPT | [asterinas-gdb-helpers-ccf.pptx](outputs/asterinas-gdb-helpers-ccf.pptx) |
+| 精简演示 PPT | [asterinas-gdb-helpers-ccf-demo.pptx](outputs/asterinas-gdb-helpers-ccf-demo.pptx)（含视频演示流程页） |
 | 源代码 | [PR #3412](https://github.com/asterinas/asterinas/pull/3412) 和 [gdb-helpers-foundation 分支](https://github.com/zevorn/asterinas/tree/gdb-helpers-foundation) |
 | 自动化证据 | [gdb-smoke-test 成功记录](https://github.com/asterinas/asterinas/actions/runs/28657288013/job/84989356187) |
 | 5 分钟视频 | 按以下讲稿与录制步骤补充 |
@@ -222,7 +222,7 @@ p (*$ast_thread(1)).is_exited
 | 必交材料 | 当前内容 | 提交前动作 |
 | --- | --- | --- |
 | 方案文档 | 本 README | 已完成 |
-| PPT | [asterinas-gdb-helpers-ccf.pptx](outputs/asterinas-gdb-helpers-ccf.pptx) | 已完成 |
+| PPT | [asterinas-gdb-helpers-ccf-demo.pptx](outputs/asterinas-gdb-helpers-ccf-demo.pptx)（含视频演示流程页） | 已完成 |
 | 5 分钟视频 | 第 7 节讲稿与第 6 节录制流程 | 录制并导出视频 |
 | 源代码 | PR #3412 和实现分支 | 同步到 GitLink 公开项目 |
 | 开源托管 | 本 GitHub 仓库用于协作镜像 | **必须再同步到 GitLink**；GitHub 单独托管不满足赛题资格要求 |
