@@ -77,7 +77,7 @@ Rust 与 Python 的耦合点以 <code>COUPLED</code> 注释标记。配合真实
 
 冒烟测试启动真实 QEMU、连接真实 <code>rust-gdb</code>，验证 printer、对象导航与全部 <code>ast-*</code> 命令。通过标志为 <code>SMOKE: all ok</code> 和 <code>[smoke] PASSED</code>；[PR #3412 的 gdb-smoke-test](https://github.com/asterinas/asterinas/actions/runs/28657288013/job/84989356187) 于 2026-07-03 成功完成。
 
-配套的 [Asterinas Debugger Agent](https://github.com/zevorn/asterinas-debugger) 在这些稳定的 GDB 原语之上组织会话、断点、观察和探针步骤，用于复用证据驱动的调试 workflow；它不改变 Asterinas 内核，也不替代开发者判断。
+配套的 [Asterinas Debugger Agent](https://github.com/zevorn/asterinas-debugger) 和 [GDB Helper Agent Workflow](https://github.com/zevorn/asterinas-debugger/blob/main/skills/asterinas-debugger/references/workflows.md) 在这些稳定的 GDB 原语之上组织会话、断点、观察和探针步骤，用于复用证据驱动的调试 workflow；它不改变 Asterinas 内核，也不替代开发者判断。
 
 ## 交付物
 
@@ -88,6 +88,7 @@ Rust 与 Python 的耦合点以 <code>COUPLED</code> 注释标记。配合真实
 | 演示 PPT | [asterinas-gdb-helpers-ccf-demo.pptx](outputs/asterinas-gdb-helpers-ccf-demo.pptx) | 含“来自进程使命”标注和最后的演示页。 |
 | 演示录屏 | [asterinas-gdb-helpers-demo-recording.mp4](videos/asterinas-gdb-helpers-demo-recording.mp4) | 原始录屏的压缩副本；提交前可按比赛时长继续裁剪或加速。 |
 | 源代码 | [PR #3412](https://github.com/asterinas/asterinas/pull/3412)；[gdb-helpers-foundation 分支](https://github.com/zevorn/asterinas/tree/gdb-helpers-foundation) | 上游实现及完整提交历史。 |
+| Agent Workflow | [Asterinas Debugger Workflows](https://github.com/zevorn/asterinas-debugger/blob/main/skills/asterinas-debugger/references/workflows.md) | 将 GDB 会话、观察、断点和探针组合为可重复的调试闭环。 |
 | 自动化证据 | [gdb-smoke-test 成功记录](https://github.com/asterinas/asterinas/actions/runs/28657288013/job/84989356187) | 真实 QEMU + GDB 测试记录。 |
 
 ## 其他上游贡献

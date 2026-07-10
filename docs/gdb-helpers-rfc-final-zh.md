@@ -131,7 +131,7 @@ Python helper 会读取 Rust 对象的实际布局，因此维护机制是方案
 
 ## 7. 配套 Agent 与 Workflow
 
-GDB Helpers 是本作品的基础设施层。配套的 [Asterinas Debugger Agent 项目](https://github.com/zevorn/asterinas-debugger) 在此之上组织调试会话、断点、观察和探针步骤，使重复排障可以按证据驱动的 workflow 执行。
+GDB Helpers 是本作品的基础设施层。配套的 [Asterinas Debugger Agent 项目](https://github.com/zevorn/asterinas-debugger) 及其中的 [GDB Helper Agent Workflow 定义](https://github.com/zevorn/asterinas-debugger/blob/main/skills/asterinas-debugger/references/workflows.md) 在此之上组织调试会话、断点、观察和探针步骤，使重复排障可以按证据驱动的 workflow 执行。
 
 该 Agent 项目不改变 Asterinas 内核，也不替代开发者判断；它复用稳定的 GDB 原语，把“启动会话—停在证据点—读取对象—验证假设”的流程固定下来。上游 PR #3412 的评审范围仍聚焦 GDB Helpers 本身。
 
@@ -143,3 +143,4 @@ GDB Helpers 是本作品的基础设施层。配套的 [Asterinas Debugger Agent
 - [PR #3412：Add GDB helpers for kernel debugging](https://github.com/asterinas/asterinas/pull/3412)
 - [PR #3120：Map CPU exceptions to fault signals on x86 and LoongArch](https://github.com/asterinas/asterinas/pull/3120)
 - [GDB Helpers 实现分支](https://github.com/zevorn/asterinas/tree/gdb-helpers-foundation)
+- [Asterinas Debugger Agent Workflow](https://github.com/zevorn/asterinas-debugger/blob/main/skills/asterinas-debugger/references/workflows.md)
